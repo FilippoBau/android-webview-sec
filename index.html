@@ -294,15 +294,8 @@
 
 
         // 12. Credential Management
-function isWebView() {
-    return /wv/.test(navigator.userAgent) || /Android.*Version\/[\d.]+.*Chrome\/[\d.]+ Mobile/.test(navigator.userAgent);
-}
 
 document.getElementById('testCredentials').addEventListener('click', async () => {
-    if (isWebView()) {
-        updateResult('credentialsResult', 'WebView non supporta le credenziali di tipo PasswordCredential.', 'error');
-        return;
-    }
 
     if (!('credentials' in navigator) || !('PasswordCredential' in window)) {
         updateResult('credentialsResult', 'API non supportata nel browser.', 'error');
