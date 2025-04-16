@@ -337,67 +337,7 @@
             }
         });
 
-        // 5. Orientamento Schermo
-        document.getElementById('testOrientation').addEventListener('click', async () => {
-            if (!checkAvailability('screen.orientation.lock', 'orientationResult')) return;
-            
-            try {
-                await screen.orientation.lock('portrait');
-                updateResult('orientationResult', 'Orientamento bloccato in portrait!', 'success');
-            } catch (err) {
-                updateResult('orientationResult', 'Errore blocco orientamento: ' + err.message, 'error');
-            }
-        });
 
-        document.getElementById('unlockOrientation').addEventListener('click', () => {
-            if (!checkAvailability('screen.orientation.unlock', 'orientationResult')) return;
-            
-            try {
-                screen.orientation.unlock();
-                updateResult('orientationResult', 'Orientamento sbloccato!', 'success');
-            } catch (err) {
-                updateResult('orientationResult', 'Errore sblocco orientamento: ' + err.message, 'error');
-            }
-        });
-
-        // 6. Notifiche
-        document.getElementById('testNotifications').addEventListener('click', async () => {
-            if (!checkAvailability('Notification.requestPermission', 'notificationsResult')) return;
-            
-            try {
-                const permission = await Notification.requestPermission();
-                updateResult('notificationsResult', 'Permesso notifiche: ' + permission, 'success');
-                
-                if (permission === 'granted') {
-                    const notification = new Notification('Test WebView', {
-                        body: 'Notifica di test dalla WebView',
-                        icon: 'https://via.placeholder.com/64'
-                    });
-                }
-            } catch (err) {
-                updateResult('notificationsResult', 'Errore notifiche: ' + err.message, 'error');
-            }
-        });
-
-        // 7. Web Share API
-        document.getElementById('testShare').addEventListener('click', async () => {
-            if (!checkAvailability('navigator.share', 'shareResult')) return;
-            
-            try {
-                await navigator.share({
-                    title: 'Test WebView',
-                    text: 'Test della Web Share API in WebView',
-                    url: window.location.href
-                });
-                updateResult('shareResult', 'Condivisione avvenuta con successo!', 'success');
-            } catch (err) {
-                if (err.name === 'AbortError') {
-                    updateResult('shareResult', 'Condivisione annullata dall\'utente', 'error');
-                } else {
-                    updateResult('shareResult', 'Errore condivisione: ' + err.message, 'error');
-                }
-            }
-        });
 
         // 8. Network Information
         document.getElementById('testConnection').addEventListener('click', () => {
@@ -428,71 +368,6 @@
             }
         });
 
-        // 9. Service Worker
-        document.getElementById('testServiceWorker').addEventListener('click', async () => {
-            if (!checkAvailability('navigator.serviceWorker.register', 'serviceWorkerResult')) return;
-            
-            try {
-                // Creiamo un service worker minimale
-                const swBlob = new Blob([`
-                    self.addEventListener('install', event => {
-                        self.skipWaiting();
-                    });
-                    self.addEventListener('activate', event => {
-                        event.waitUntil(clients.claim());
-                    });
-                `], { type: 'text/javascript' });
-                
-                const swUrl = URL.createObjectURL(swBlob);
-                const registration = await navigator.serviceWorker.register(swUrl, { scope: './' });
-                
-                updateResult('serviceWorkerResult', 'Service Worker registrato con successo!', 'success');
-                
-                // Pulizia dopo alcuni secondi
-                setTimeout(() => {
-                    registration.unregister().then(success => {
-                        if (success) updateResult('serviceWorkerResult', 'Service Worker deregistrato', 'success');
-                    });
-                    URL.revokeObjectURL(swUrl);
-                }, 3000);
-            } catch (err) {
-                updateResult('serviceWorkerResult', 'Errore Service Worker: ' + err.message, 'error');
-            }
-        });
-
-        // 10. Bluetooth
-        document.getElementById('testBluetooth').addEventListener('click', async () => {
-            if (!checkAvailability('navigator.bluetooth.requestDevice', 'bluetoothResult')) return;
-            
-            try {
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true
-                });
-                updateResult('bluetoothResult', `Dispositivo Bluetooth selezionato: ${device.name || 'Senza nome'}`, 'success');
-            } catch (err) {
-                if (err.name === 'NotFoundError') {
-                    updateResult('bluetoothResult', 'Nessun dispositivo Bluetooth trovato', 'error');
-                } else if (err.name === 'SecurityError') {
-                    updateResult('bluetoothResult', 'API Bluetooth bloccata per motivi di sicurezza nella WebView', 'error');
-                } else {
-                    updateResult('bluetoothResult', 'Errore Bluetooth: ' + err.message, 'error');
-                }
-            }
-        });
-
-        // 11. Beacon API
-        document.getElementById('testBeacon').addEventListener('click', () => {
-            if (!checkAvailability('navigator.sendBeacon', 'beaconResult')) return;
-            
-            try {
-                // Usiamo un endpoint di test
-                const data = new Blob(['Test Beacon API'], { type: 'text/plain' });
-                const result = navigator.sendBeacon('https://httpbin.org/post', data);
-                updateResult('beaconResult', result ? 'Beacon inviato con successo!' : 'Invio beacon fallito', result ? 'success' : 'error');
-            } catch (err) {
-                updateResult('beaconResult', 'Errore Beacon: ' + err.message, 'error');
-            }
-        });
 
         // 12. Credential Management
 function isWebView() {
@@ -543,83 +418,6 @@ document.getElementById('testCredentials').addEventListener('click', async () =>
 });
 
 
-        // 13. WebUSB API
-        document.getElementById('testUsb').addEventListener('click', async () => {
-            if (!checkAvailability('navigator.usb.requestDevice', 'usbResult')) return;
-            
-            try {
-                const device = await navigator.usb.requestDevice({ filters: [] });
-                updateResult('usbResult', `Dispositivo USB selezionato: ${device.productName || 'Sconosciuto'}`, 'success');
-            } catch (err) {
-                if (err.name === 'NotFoundError') {
-                    updateResult('usbResult', 'Nessun dispositivo USB trovato', 'error');
-                } else {
-                    updateResult('usbResult', 'Errore WebUSB: ' + err.message, 'error');
-                }
-            }
-        });
-
-        // 14. Media Session API
-        document.getElementById('testMediaSession').addEventListener('click', () => {
-            if (!checkAvailability('navigator.mediaSession', 'mediaSessionResult')) return;
-            
-            try {
-                // Creiamo un elemento audio invisibile per attivare il media session
-                const audio = new Audio();
-                audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-                audio.loop = true;
-                
-                // Impostiamo i metadati
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: 'Test Media Session',
-                    artist: 'WebView Test',
-                    album: 'Test Album',
-                    artwork: [{ src: 'https://via.placeholder.com/96', sizes: '96x96', type: 'image/png' }]
-                });
-                
-                // Impostiamo gli handler
-                navigator.mediaSession.setActionHandler('play', () => {
-                    audio.play();
-                    updateResult('mediaSessionResult', 'Media Session: evento play ricevuto!', 'success');
-                });
-                
-                navigator.mediaSession.setActionHandler('pause', () => {
-                    audio.pause();
-                    updateResult('mediaSessionResult', 'Media Session: evento pause ricevuto!', 'success');
-                });
-                
-                updateResult('mediaSessionResult', 'Media Session configurata correttamente!', 'success');
-                
-                // Pulizia dopo alcuni secondi
-                setTimeout(() => {
-                    audio.pause();
-                    audio.src = '';
-                }, 5000);
-            } catch (err) {
-                updateResult('mediaSessionResult', 'Errore Media Session: ' + err.message, 'error');
-            }
-        });
-
-        // 15. Fullscreen API
-        document.getElementById('testFullscreen').addEventListener('click', async () => {
-            if (!checkAvailability('document.documentElement.requestFullscreen', 'fullscreenResult')) return;
-            
-            try {
-                await document.documentElement.requestFullscreen();
-                updateResult('fullscreenResult', 'Fullscreen attivato!', 'success');
-                
-                // Usciamo dal fullscreen dopo pochi secondi
-                setTimeout(() => {
-                    if (document.fullscreenElement) {
-                        document.exitFullscreen().then(() => {
-                            updateResult('fullscreenResult', 'Uscito da fullscreen', 'success');
-                        });
-                    }
-                }, 3000);
-            } catch (err) {
-                updateResult('fullscreenResult', 'Errore Fullscreen: ' + err.message, 'error');
-            }
-        });
 
         // 16. Contact Picker API
         document.getElementById('testContacts').addEventListener('click', async () => {
@@ -637,46 +435,6 @@ document.getElementById('testCredentials').addEventListener('click', async () =>
             }
         });
 
-        // 17. Permissions API
-        document.getElementById('testPermissions').addEventListener('click', async () => {
-            if (!checkAvailability('navigator.permissions.query', 'permissionsResult')) return;
-            
-            try {
-                const permissionsList = ['geolocation', 'camera', 'microphone', 'notifications'];
-                let results = '';
-                
-                for (const permission of permissionsList) {
-                    try {
-                        const status = await navigator.permissions.query({ name: permission });
-                        results += `${permission}: ${status.state}<br>`;
-                    } catch (err) {
-                        results += `${permission}: non supportato<br>`;
-                    }
-                }
-                
-                updateResult('permissionsResult', results, 'success');
-            } catch (err) {
-                updateResult('permissionsResult', 'Errore Permissions API: ' + err.message, 'error');
-            }
-        });
-
-        // 18. Web Share Check
-        document.getElementById('testCanShare').addEventListener('click', () => {
-            if (!checkAvailability('navigator.canShare', 'canShareResult')) return;
-            
-            try {
-                const shareData = {
-                    title: 'Test WebView',
-                    text: 'Test della Web Share API in WebView',
-                    url: window.location.href
-                };
-                
-                const canShare = navigator.canShare(shareData);
-                updateResult('canShareResult', canShare ? 'È possibile condividere questo contenuto' : 'Non è possibile condividere questo contenuto', canShare ? 'success' : 'error');
-            } catch (err) {
-                updateResult('canShareResult', 'Errore canShare: ' + err.message, 'error');
-            }
-        });
 
         // 19. Media Devices
         document.getElementById('testEnumerateDevices').addEventListener('click', async () => {
