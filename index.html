@@ -495,45 +495,53 @@
         });
 
         // 12. Credential Management
-        document.getElementById('testCredentials').addEventListener('click', async () => {
-            if (!checkAvailability('navigator.credentials', 'credentialsResult')) return;
-            
-            try {
-                // Proviamo a salvare delle credenziali di test
-                const credential = {
-                    id: 'test@example.com',
-                    password: 'password123',
-                    name: 'Test User'
-                };
-                
-                try {
-                    await navigator.credentials.store(new PasswordCredential(credential));
-                    updateResult('credentialsResult', 'Credenziali salvate correttamente!', 'success');
-                } catch (storeErr) {
-                    updateResult('credentialsResult', 'Errore nel salvataggio delle credenziali: ' + storeErr.message, 'error');
-                }
-                
-                // Proviamo a recuperarle
-                setTimeout(async () => {
-                    try {
-                        const cred = await navigator.credentials.get({
-                            password: true,
-                            mediation: 'optional'
-                        });
-                        
-                        if (cred) {
-                            updateResult('credentialsResult', 'Credenziali recuperate: ' + cred.id, 'success');
-                        } else {
-                            updateResult('credentialsResult', 'Nessuna credenziale trovata o l\'utente ha rifiutato', 'error');
-                        }
-                    } catch (getErr) {
-                        updateResult('credentialsResult', 'Errore nel recupero delle credenziali: ' + getErr.message, 'error');
-                    }
-                }, 1000);
-            } catch (err) {
-                updateResult('credentialsResult', 'Errore Credentials API: ' + err.message, 'error');
+function isWebView() {
+    return /wv/.test(navigator.userAgent) || /Android.*Version\/[\d.]+.*Chrome\/[\d.]+ Mobile/.test(navigator.userAgent);
+}
+
+document.getElementById('testCredentials').addEventListener('click', async () => {
+    if (isWebView()) {
+        updateResult('credentialsResult', 'WebView non supporta le credenziali di tipo PasswordCredential.', 'error');
+        return;
+    }
+
+    if (!('credentials' in navigator) || !('PasswordCredential' in window)) {
+        updateResult('credentialsResult', 'API non supportata nel browser.', 'error');
+        return;
+    }
+
+    const credential = new PasswordCredential({
+        id: 'test@example.com',
+        password: 'password123',
+        name: 'Test User'
+    });
+
+    try {
+        await navigator.credentials.store(credential);
+        updateResult('credentialsResult', 'Credenziali salvate correttamente!', 'success');
+    } catch (storeErr) {
+        updateResult('credentialsResult', 'Errore nel salvataggio delle credenziali: ' + storeErr.message, 'error');
+        return;
+    }
+
+    setTimeout(async () => {
+        try {
+            const cred = await navigator.credentials.get({
+                password: true,
+                mediation: 'optional'
+            });
+
+            if (cred) {
+                updateResult('credentialsResult', 'Credenziali recuperate: ' + cred.id, 'success');
+            } else {
+                updateResult('credentialsResult', 'Nessuna credenziale trovata o l\'utente ha rifiutato', 'error');
             }
-        });
+        } catch (getErr) {
+            updateResult('credentialsResult', 'Errore nel recupero delle credenziali: ' + getErr.message, 'error');
+        }
+    }, 1000);
+});
+
 
         // 13. WebUSB API
         document.getElementById('testUsb').addEventListener('click', async () => {
