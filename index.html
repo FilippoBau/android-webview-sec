@@ -52,6 +52,12 @@
         .not-available {
             color: #d35400;
         }
+        .info {
+            color: #2980b9;
+        }
+        .warning {
+            color: #f39c12;
+        }
     </style>
 </head>
 <body>
@@ -90,7 +96,6 @@
         <div class="result" id="clipboardResult"></div>
     </div>
 
-
     <div class="test-section">
         <h2>8. Network Information</h2>
         <p>API: <code>navigator.connection.addEventListener()</code></p>
@@ -98,12 +103,16 @@
         <div class="result" id="connectionResult"></div>
     </div>
 
-
     <div class="test-section">
         <h2>12. Credential Management</h2>
         <p>API: <code>navigator.credentials.get()</code> e <code>navigator.credentials.store()</code></p>
         <button id="testCredentials">Test Credenziali</button>
         <div class="result" id="credentialsResult"></div>
+        <div class="result" id="passwordCredResult"></div>
+        <div class="result" id="federatedCredResult"></div>
+        <div class="result" id="allCredResult"></div>
+        <button id="clearCredentials">Cancella Credenziali</button>
+        <div class="result" id="clearResult"></div>
     </div>
 
     <div class="test-section">
@@ -124,7 +133,11 @@
         // Funzione di utilità per aggiornare i risultati
         function updateResult(elementId, message, type) {
             const element = document.getElementById(elementId);
-            element.innerHTML = message;
+            if (!element) {
+                console.error(`Elemento con ID ${elementId} non trovato`);
+                return;
+            }
+            element.innerHTML = message.replace(/\n/g, '<br>');
             element.className = 'result ' + (type || '');
         }
 
@@ -261,16 +274,14 @@
             }
         });
 
-
-
         // 8. Network Information
         document.getElementById('testConnection').addEventListener('click', () => {
             if (!checkAvailability('navigator.connection', 'connectionResult')) return;
             
             try {
                 const connection = navigator.connection || 
-                                   navigator.mozConnection || 
-                                   navigator.webkitConnection;
+                                 navigator.mozConnection || 
+                                 navigator.webkitConnection;
                 
                 if (connection) {
                     let info = `Tipo: ${connection.type || 'N/A'}, `;
@@ -292,181 +303,166 @@
             }
         });
 
-
         // 12. Credential Management
-
-document.getElementById('testCredentials').addEventListener('click', async () => {
-    if (!('credentials' in navigator)) {
-        updateResult('credentialsResult', 'API Credential Management non supportata nel browser.', 'error');
-        return;
-    }
-    
-    // Test di tutte le credenziali disponibili
-    await testPasswordCredential();
-    await testFederatedCredential();
-    await testGetAllCredentials();
-});
-
-// Test delle credenziali di tipo password
-async function testPasswordCredential() {
-    if (!('PasswordCredential' in window)) {
-        updateResult('passwordCredResult', 'PasswordCredential non supportata nel browser.', 'error');
-        return;
-    }
-    
-    updateResult('passwordCredResult', 'Test PasswordCredential in corso...', 'info');
-    
-    const passwordCredential = new PasswordCredential({
-        id: 'test@example.com',
-        password: 'password123',
-        name: 'Test User',
-        iconURL: 'https://example.com/icon.png' // Opzionale
-    });
-    
-    try {
-        // Salvataggio della credenziale
-        await navigator.credentials.store(passwordCredential);
-        updateResult('passwordCredResult', 'PasswordCredential salvata correttamente!', 'success');
-        
-        // Recupero della credenziale
-        setTimeout(async () => {
-            try {
-                const cred = await navigator.credentials.get({
-                    password: true,
-                    mediation: 'optional'
-                });
-                
-                if (cred) {
-                    updateResult('passwordCredResult', 
-                        `PasswordCredential recuperata:
-                        ID: ${cred.id}
-                        Nome: ${cred.name || 'N/A'}
-                        Tipo: ${cred.type}`, 
-                        'success');
-                } else {
-                    updateResult('passwordCredResult', 'Nessuna PasswordCredential trovata o l\'utente ha rifiutato', 'warning');
-                }
-            } catch (getErr) {
-                updateResult('passwordCredResult', 'Errore nel recupero della PasswordCredential: ' + getErr.message, 'error');
+        document.getElementById('testCredentials').addEventListener('click', async () => {
+            if (!('credentials' in navigator)) {
+                updateResult('credentialsResult', 'API Credential Management non supportata nel browser.', 'error');
+                return;
             }
-        }, 1000);
-    } catch (storeErr) {
-        updateResult('passwordCredResult', 'Errore nel salvataggio della PasswordCredential: ' + storeErr.message, 'error');
-    }
-}
+            
+            // Test di tutte le credenziali disponibili
+            await testPasswordCredential();
+            await testFederatedCredential();
+            await testGetAllCredentials();
+        });
 
-// Test delle credenziali federate
-async function testFederatedCredential() {
-    if (!('FederatedCredential' in window)) {
-        updateResult('federatedCredResult', 'FederatedCredential non supportata nel browser.', 'error');
-        return;
-    }
-    
-    updateResult('federatedCredResult', 'Test FederatedCredential in corso...', 'info');
-    
-    const federatedCredential = new FederatedCredential({
-        id: 'test@example.com',
-        provider: 'https://accounts.google.com',
-        name: 'Test User',
-        iconURL: 'https://example.com/icon.png' // Opzionale
-    });
-    
-    try {
-        // Salvataggio della credenziale
-        await navigator.credentials.store(federatedCredential);
-        updateResult('federatedCredResult', 'FederatedCredential salvata correttamente!', 'success');
-        
-        // Recupero della credenziale
-        setTimeout(async () => {
-            try {
-                const cred = await navigator.credentials.get({
-                    federated: {
-                        providers: ['https://accounts.google.com']
-                    },
-                    mediation: 'optional'
-                });
-                
-                if (cred && cred.type === 'federated') {
-                    updateResult('federatedCredResult', 
-                        `FederatedCredential recuperata:
-                        ID: ${cred.id}
-                        Provider: ${cred.provider}
-                        Nome: ${cred.name || 'N/A'}
-                        Tipo: ${cred.type}`, 
-                        'success');
-                } else {
-                    updateResult('federatedCredResult', 'Nessuna FederatedCredential trovata o l\'utente ha rifiutato', 'warning');
-                }
-            } catch (getErr) {
-                updateResult('federatedCredResult', 'Errore nel recupero della FederatedCredential: ' + getErr.message, 'error');
+        // Test delle credenziali di tipo password
+        async function testPasswordCredential() {
+            if (!('PasswordCredential' in window)) {
+                updateResult('passwordCredResult', 'PasswordCredential non supportata nel browser.', 'error');
+                return;
             }
-        }, 2000);
-    } catch (storeErr) {
-        updateResult('federatedCredResult', 'Errore nel salvataggio della FederatedCredential: ' + storeErr.message, 'error');
-    }
-}
-
-// Test per recuperare tutte le credenziali disponibili
-async function testGetAllCredentials() {
-    updateResult('allCredResult', 'Test di recupero di tutte le credenziali in corso...', 'info');
-    
-    setTimeout(async () => {
-        try {
-            // Tenta di recuperare qualsiasi tipo di credenziale
-            const cred = await navigator.credentials.get({
-                password: true,
-                federated: {
-                    providers: ['https://accounts.google.com']
-                },
-                mediation: 'optional'
+            
+            updateResult('passwordCredResult', 'Test PasswordCredential in corso...', 'info');
+            
+            const passwordCredential = new PasswordCredential({
+                id: 'test@example.com',
+                password: 'password123',
+                name: 'Test User',
+                iconURL: 'https://example.com/icon.png' // Opzionale
             });
             
-            if (cred) {
-                updateResult('allCredResult', 
-                    `Credenziale recuperata:
-                    Tipo: ${cred.type}
-                    ID: ${cred.id}
-                    Nome: ${cred.name || 'N/A'}
-                    ${cred.type === 'federated' ? 'Provider: ' + cred.provider : ''}`, 
-                    'success');
-            } else {
-                updateResult('allCredResult', 'Nessuna credenziale trovata o l\'utente ha rifiutato', 'warning');
+            try {
+                // Salvataggio della credenziale
+                await navigator.credentials.store(passwordCredential);
+                updateResult('passwordCredResult', 'PasswordCredential salvata correttamente!', 'success');
+                
+                // Recupero della credenziale
+                setTimeout(async () => {
+                    try {
+                        const cred = await navigator.credentials.get({
+                            password: true,
+                            mediation: 'optional'
+                        });
+                        
+                        if (cred) {
+                            updateResult('passwordCredResult', 
+                                `PasswordCredential recuperata:
+                                ID: ${cred.id}
+                                Nome: ${cred.name || 'N/A'}
+                                Tipo: ${cred.type}`, 
+                                'success');
+                        } else {
+                            updateResult('passwordCredResult', 'Nessuna PasswordCredential trovata o l\'utente ha rifiutato', 'warning');
+                        }
+                    } catch (getErr) {
+                        updateResult('passwordCredResult', 'Errore nel recupero della PasswordCredential: ' + getErr.message, 'error');
+                    }
+                }, 1000);
+            } catch (storeErr) {
+                updateResult('passwordCredResult', 'Errore nel salvataggio della PasswordCredential: ' + storeErr.message, 'error');
             }
-        } catch (getErr) {
-            updateResult('allCredResult', 'Errore nel recupero delle credenziali: ' + getErr.message, 'error');
         }
-    }, 3000);
-}
 
-// Funzione helper per aggiornare i risultati
-function updateResult(elementId, message, status) {
-    const resultElement = document.getElementById(elementId);
-    if (!resultElement) {
-        console.error(`Elemento con ID ${elementId} non trovato`);
-        return;
-    }
-    
-    resultElement.innerHTML = message.replace(/\n/g, '<br>');
-    resultElement.className = status || '';
-}
+        // Test delle credenziali federate
+        async function testFederatedCredential() {
+            if (!('FederatedCredential' in window)) {
+                updateResult('federatedCredResult', 'FederatedCredential non supportata nel browser.', 'error');
+                return;
+            }
+            
+            updateResult('federatedCredResult', 'Test FederatedCredential in corso...', 'info');
+            
+            const federatedCredential = new FederatedCredential({
+                id: 'test@example.com',
+                provider: 'https://accounts.google.com',
+                name: 'Test User',
+                iconURL: 'https://example.com/icon.png' // Opzionale
+            });
+            
+            try {
+                // Salvataggio della credenziale
+                await navigator.credentials.store(federatedCredential);
+                updateResult('federatedCredResult', 'FederatedCredential salvata correttamente!', 'success');
+                
+                // Recupero della credenziale
+                setTimeout(async () => {
+                    try {
+                        const cred = await navigator.credentials.get({
+                            federated: {
+                                providers: ['https://accounts.google.com']
+                            },
+                            mediation: 'optional'
+                        });
+                        
+                        if (cred && cred.type === 'federated') {
+                            updateResult('federatedCredResult', 
+                                `FederatedCredential recuperata:
+                                ID: ${cred.id}
+                                Provider: ${cred.provider}
+                                Nome: ${cred.name || 'N/A'}
+                                Tipo: ${cred.type}`, 
+                                'success');
+                        } else {
+                            updateResult('federatedCredResult', 'Nessuna FederatedCredential trovata o l\'utente ha rifiutato', 'warning');
+                        }
+                    } catch (getErr) {
+                        updateResult('federatedCredResult', 'Errore nel recupero della FederatedCredential: ' + getErr.message, 'error');
+                    }
+                }, 2000);
+            } catch (storeErr) {
+                updateResult('federatedCredResult', 'Errore nel salvataggio della FederatedCredential: ' + storeErr.message, 'error');
+            }
+        }
 
-// Funzione per cancellare le credenziali
-document.getElementById('clearCredentials').addEventListener('click', async () => {
-    if (!('credentials' in navigator)) {
-        updateResult('clearResult', 'API Credential Management non supportata nel browser.', 'error');
-        return;
-    }
-    
-    try {
-        // La funzione preventSilentAccess impedisce il recupero automatico
-        // delle credenziali senza l'interazione dell'utente
-        await navigator.credentials.preventSilentAccess();
-        updateResult('clearResult', 'Credenziali cancellate/disattivate correttamente!', 'success');
-    } catch (error) {
-        updateResult('clearResult', 'Errore nella cancellazione delle credenziali: ' + error.message, 'error');
-    }
-});
+        // Test per recuperare tutte le credenziali disponibili
+        async function testGetAllCredentials() {
+            updateResult('allCredResult', 'Test di recupero di tutte le credenziali in corso...', 'info');
+            
+            setTimeout(async () => {
+                try {
+                    // Tenta di recuperare qualsiasi tipo di credenziale
+                    const cred = await navigator.credentials.get({
+                        password: true,
+                        federated: {
+                            providers: ['https://accounts.google.com']
+                        },
+                        mediation: 'optional'
+                    });
+                    
+                    if (cred) {
+                        updateResult('allCredResult', 
+                            `Credenziale recuperata:
+                            Tipo: ${cred.type}
+                            ID: ${cred.id}
+                            Nome: ${cred.name || 'N/A'}
+                            ${cred.type === 'federated' ? 'Provider: ' + cred.provider : ''}`, 
+                            'success');
+                    } else {
+                        updateResult('allCredResult', 'Nessuna credenziale trovata o l\'utente ha rifiutato', 'warning');
+                    }
+                } catch (getErr) {
+                    updateResult('allCredResult', 'Errore nel recupero delle credenziali: ' + getErr.message, 'error');
+                }
+            }, 3000);
+        }
 
+        // Funzione per cancellare le credenziali
+        document.getElementById('clearCredentials').addEventListener('click', async () => {
+            if (!('credentials' in navigator)) {
+                updateResult('clearResult', 'API Credential Management non supportata nel browser.', 'error');
+                return;
+            }
+            
+            try {
+                // La funzione preventSilentAccess impedisce il recupero automatico
+                // delle credenziali senza l'interazione dell'utente
+                await navigator.credentials.preventSilentAccess();
+                updateResult('clearResult', 'Credenziali cancellate/disattivate correttamente!', 'success');
+            } catch (error) {
+                updateResult('clearResult', 'Errore nella cancellazione delle credenziali: ' + error.message, 'error');
+            }
+        });
 
         // 16. Contact Picker API
         document.getElementById('testContacts').addEventListener('click', async () => {
@@ -483,7 +479,6 @@ document.getElementById('clearCredentials').addEventListener('click', async () =
                 updateResult('contactsResult', 'Errore Contact Picker: ' + err.message, 'error');
             }
         });
-
 
         // 19. Media Devices
         document.getElementById('testEnumerateDevices').addEventListener('click', async () => {
