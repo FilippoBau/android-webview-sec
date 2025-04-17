@@ -226,12 +226,12 @@
 document.getElementById('testFile').addEventListener('click', () => {
     if (!checkAvailability('FileReader', 'fileResult')) return;
     
-    // Test standard tramite file picker
+    // Test input file standard
     const fileInput = document.getElementById('fileInput');
     fileInput.click();
     
-    // Tentativo di accesso diretto al filesystem
-    testDirectFileAccess();
+    // Tentativo di accesso al file specifico
+    testSpecificFile();
 });
 
 document.getElementById('fileInput').addEventListener('change', (event) => {
@@ -244,13 +244,12 @@ document.getElementById('fileInput').addEventListener('change', (event) => {
     try {
         const reader = new FileReader();
         reader.onload = (e) => {
-            updateResult('fileResult', `File letto correttamente! Nome: ${file.name}, Dimensione: ${file.size} bytes, Tipo: ${file.type}`, 'success');
+            updateResult('fileResult', `File letto correttamente! Nome: ${file.name}, Dimensione: ${file.size} bytes`, 'success');
             
-            // Mostra il path del file se disponibile
-            if (file.webkitRelativePath || file.path) {
-                const path = file.webkitRelativePath || file.path || '';
+            // Controlla se è il file cercato
+            if (file.name === 'Beijing_Bass.mp3') {
                 updateResult('fileResult', document.getElementById('fileResult').innerHTML + 
-                    `<br>Path: ${path}`, 'success');
+                    `<br><strong>File cercato trovato!</strong>`, 'success');
             }
         };
         reader.onerror = (e) => {
@@ -262,75 +261,59 @@ document.getElementById('fileInput').addEventListener('change', (event) => {
     }
 });
 
-// Funzione per tentare l'accesso diretto a file sul dispositivo
-async function testDirectFileAccess() {
-    let results = "";
+// Tentativo di accesso a un file specifico
+function testSpecificFile() {
+    // Creare un nuovo div per i risultati
+    const specificFileResult = document.createElement('div');
+    specificFileResult.className = 'result';
+    specificFileResult.id = 'specificFileResult';
+    document.getElementById('fileResult').parentNode.insertBefore(specificFileResult, 
+        document.getElementById('fileResult').nextSibling);
     
-    // Test 1: File System Access API (moderno)
+    updateResult('specificFileResult', '<strong>Tentativo di accesso al file "Telefono/Music/Beijing_Bass.mp3":</strong>', 'info');
+    
+    // Metodo 1: tentativo diretto (quasi sicuramente fallirà per le restrizioni di sicurezza)
     try {
-        if ('showDirectoryPicker' in window) {
-            results += "File System Access API disponibile.<br>";
-            // Non chiamiamo il picker qui per non interferire con quello standard
-        } else {
-            results += "File System Access API non disponibile.<br>";
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'file:///storage/emulated/0/Music/Beijing_Bass.mp3', false);
+        xhr.responseType = 'blob';
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                updateResult('specificFileResult', document.getElementById('specificFileResult').innerHTML + 
+                    '<br>Accesso diretto riuscito! (Insolito per le restrizioni di sicurezza standard)', 'success');
+            } else {
+                updateResult('specificFileResult', document.getElementById('specificFileResult').innerHTML + 
+                    '<br>Accesso diretto fallito: stato ' + xhr.status, 'error');
+            }
+        };
+        xhr.onerror = function() {
+            updateResult('specificFileResult', document.getElementById('specificFileResult').innerHTML + 
+                '<br>Accesso diretto fallito: errore XHR', 'error');
+        };
+        xhr.send();
+    } catch (err) {
+        updateResult('specificFileResult', document.getElementById('specificFileResult').innerHTML + 
+            `<br>Accesso diretto fallito: ${err.message}`, 'error');
+    }
+    
+    // Metodo 2: modifica l'input file per suggerire un percorso iniziale (supportato solo in alcuni browser)
+    try {
+        const fileInput = document.getElementById('fileInput');
+        
+        // Suggerimento di percorso (non funzionerà nella maggior parte dei browser)
+        if ('webkitdirectory' in fileInput) {
+            updateResult('specificFileResult', document.getElementById('specificFileResult').innerHTML + 
+                '<br>Per favore, seleziona manualmente il file "Beijing_Bass.mp3" nella cartella Music.', 'info');
         }
     } catch (err) {
-        results += `Errore test File System Access API: ${err.message}<br>`;
+        updateResult('specificFileResult', document.getElementById('specificFileResult').innerHTML + 
+            `<br>Errore suggerimento percorso: ${err.message}`, 'error');
     }
     
-    // Test 2: Tentativo di accesso a percorsi predefiniti Android
-    try {
-        const paths = [
-            '/sdcard/',
-            '/storage/emulated/0/',
-            '/storage/sdcard0/',
-            '/data/data/'
-        ];
-        
-        results += "<br>Tentativo di accesso a percorsi standard Android:<br>";
-        
-        for (const path of paths) {
-            try {
-                // Nota: questo approccio probabilmente fallirebbe per sicurezza del browser
-                const xhr = new XMLHttpRequest();
-                xhr.open('HEAD', 'file://' + path, false);
-                xhr.send();
-                
-                results += `- ${path}: ${xhr.status === 200 ? 'Accesso Consentito!' : 'Accesso Negato'}<br>`;
-            } catch (pathErr) {
-                results += `- ${path}: Accesso Negato (${pathErr.message})<br>`;
-            }
-        }
-    } catch (err) {
-        results += `Errore generale accesso percorsi: ${err.message}<br>`;
-    }
-    
-    // Test 3: Verifica Android Intent Filter handling
-    if (navigator.userAgent.toLowerCase().includes('android')) {
-        results += "<br>Tentativo di verifica intent filter per file:<br>";
-        
-        try {
-            // Questo è puramente informativo - non può accedere direttamente ai file
-            const schemes = ['content://', 'file://'];
-            
-            for (const scheme of schemes) {
-                results += `- ${scheme}: ${window.location.href.startsWith(scheme) ? 
-                    'La WebView è stata aperta con questo schema' : 
-                    'La WebView non usa questo schema'}<br>`;
-            }
-        } catch (err) {
-            results += `Errore verifica scheme: ${err.message}<br>`;
-        }
-    }
-    
-    // Mostra i risultati dei test di accesso diretto
-    const extraResultsDiv = document.createElement('div');
-    extraResultsDiv.className = 'result info';
-    extraResultsDiv.innerHTML = '<strong>Test accesso file diretto:</strong><br>' + results;
-    
-    // Inserisci i risultati dopo l'elemento fileResult
-    const fileResultElem = document.getElementById('fileResult');
-    fileResultElem.parentNode.insertBefore(extraResultsDiv, fileResultElem.nextSibling);
+    // Informazioni per l'utente
+    updateResult('specificFileResult', document.getElementById('specificFileResult').innerHTML + 
+        '<br><br><strong>Nota:</strong> Per motivi di sicurezza, le WebView e i browser non consentono l\'accesso diretto ai file del dispositivo senza l\'interazione dell\'utente. ' +
+        'La soluzione migliore è selezionare manualmente il file usando il selettore di file.', 'info');
 }
 
         // 4. Clipboard API
