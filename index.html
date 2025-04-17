@@ -222,55 +222,57 @@
             }
         });
 
+        // 3. Accesso File
+        document.getElementById('testFile').addEventListener('click', () => {
+            if (!checkAvailability('FileReader', 'fileResult')) return;
+            
+            const fileInput = document.getElementById('fileInput');
+            fileInput.click();
+        });
 
-// 2. file system
-document.getElementById('testFile').addEventListener('click', () => {
-  apriELeggiFileComeDataURL();
-});
+        document.getElementById('fileInput').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                updateResult('fileResult', 'Nessun file selezionato', 'error');
+                return;
+            }
+            
+            try {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    updateResult('fileResult', `File letto correttamente! Nome: ${file.name}, Dimensione: ${file.size} bytes`, 'success');
+                };
+                reader.onerror = (e) => {
+                    updateResult('fileResult', 'Errore lettura file: ' + e.target.error, 'error');
+                };
+                reader.readAsDataURL(file);
+            } catch (err) {
+                updateResult('fileResult', 'Errore accesso file: ' + err.message, 'error');
+            }
+        });
 
-async function apriELeggiFileComeDataURL() {
-  try {
-    // 1. Mostra il selettore file e ottieni il file handle
-    const [fileHandle] = await window.showOpenFilePicker({
-      types: [
-        {
-          description: 'Tutti i file',
-          accept: {
-            '*/*': []
-          }
-        }
-      ],
-      excludeAcceptAllOption: false,
-      multiple: false
-    });
-    
-    // 2. Usa getFile() per ottenere il File oggetto dal file handle
-    const file = await fileHandle.getFile();
-    console.log(`File selezionato: ${file.name}, ${file.size} bytes`);
-    
-    // 3. Crea un FileReader per leggere il contenuto come DataURL
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataURL = e.target.result;
-      console.log("Contenuto DataURL:", dataURL);
-      
-      // Mostra il risultato, ad esempio in una <img> se è un'immagine
-      const preview = document.getElementById('preview');
-      if (preview) {
-        preview.src = dataURL;
-      }
-    };
-    
-    reader.onerror = (e) => {
-      console.error("Errore durante la lettura del file:", e.target.error);
-    };
-    
-    // 4. Legge il file come DataURL
-    reader.readAsDataURL(file);
-  } catch (err) {
-    console.error("Errore generale:", err);
-  }
-}
+        // 4. Clipboard API
+        document.getElementById('testClipboardWrite').addEventListener('click', async () => {
+            if (!checkAvailability('navigator.clipboard.writeText', 'clipboardResult')) return;
+            
+            try {
+                await navigator.clipboard.writeText('Test WebView ' + new Date().toLocaleTimeString());
+                updateResult('clipboardResult', 'Testo copiato negli appunti!', 'success');
+            } catch (err) {
+                updateResult('clipboardResult', 'Errore scrittura clipboard: ' + err.message, 'error');
+            }
+        });
+
+        document.getElementById('testClipboardRead').addEventListener('click', async () => {
+            if (!checkAvailability('navigator.clipboard.readText', 'clipboardResult')) return;
+            
+            try {
+                const text = await navigator.clipboard.readText();
+                updateResult('clipboardResult', 'Testo dagli appunti: ' + text, 'success');
+            } catch (err) {
+                updateResult('clipboardResult', 'Errore lettura clipboard: ' + err.message, 'error');
+            }
+        });
 
         // 8. Network Information
         document.getElementById('testConnection').addEventListener('click', () => {
