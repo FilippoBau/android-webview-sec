@@ -223,10 +223,12 @@
         });
 
 
+// 2. file system
+document.getElementById('fileInput').addEventListener('click', () => {
+  apriELeggiFileComeDataURL();
+});
 
-                // 2. file system
-        document.getElementById('fileInput').addEventListener('click', () => {
-          async function apriELeggiFileComeDataURL() {
+async function apriELeggiFileComeDataURL() {
   try {
     // 1. Mostra il selettore file e ottieni il file handle
     const [fileHandle] = await window.showOpenFilePicker({
@@ -234,47 +236,41 @@
         {
           description: 'Tutti i file',
           accept: {
-            '*/*': ['.*']
+            '*/*': ['./*']
           }
         }
       ],
       excludeAcceptAllOption: false,
       multiple: false
     });
-
+    
     // 2. Usa getFile() per ottenere il File oggetto dal file handle
     const file = await fileHandle.getFile();
     console.log(`File selezionato: ${file.name}, ${file.size} bytes`);
-
+    
     // 3. Crea un FileReader per leggere il contenuto come DataURL
     const reader = new FileReader();
-
     reader.onload = (e) => {
       const dataURL = e.target.result;
       console.log("Contenuto DataURL:", dataURL);
-
+      
       // Mostra il risultato, ad esempio in una <img> se è un'immagine
       const preview = document.getElementById('preview');
       if (preview) {
         preview.src = dataURL;
       }
-         
     };
-
+    
     reader.onerror = (e) => {
       console.error("Errore durante la lettura del file:", e.target.error);
     };
-
+    
     // 4. Legge il file come DataURL
     reader.readAsDataURL(file);
-
   } catch (err) {
     console.error("Errore generale:", err);
   }
 }
-             apriELeggiFileComeDataURL();
-
-        });
 
         // 8. Network Information
         document.getElementById('testConnection').addEventListener('click', () => {
