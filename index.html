@@ -305,7 +305,7 @@
                     const text = await navigator.clipboard.readText();
                     resolve({ text, method: 'Web API' });
                 } else {
-                    reject(new Error('Permesso per leggere dal clipboard negato'));
+                    reject(new Error('Permesso per leggere dal clipboard negato',permissionStatus.state));
                 }
             } catch (err) {
                 reject(err);
