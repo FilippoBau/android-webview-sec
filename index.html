@@ -250,25 +250,52 @@
                 updateResult('fileResult', 'Errore accesso file: ' + err.message, 'error');
             }
         });
-
-        // 4. Clipboard API
+        function readTextFromClipboard() {
+            return new Promise((resolve, reject) => {
+                // Try using the Native Android bridge first if available
+                if (typeof NativeAndroid !== 'undefined' && NativeAndroid.readFromClipboard) {
+                    try {
+                        const text = NativeAndroid.readFromClipboard();
+                        resolve({ text, method: 'Native Android' });
+                    } catch (err) {
+                        console.error('Native clipboard read error:', err);
+                        // Fall back to web API
+                        tryWebClipboard();
+                    }
+                } else {
+                    // If native bridge isn't available, try web API
+                    tryWebClipboard();
+                }
+                
+                function tryWebClipboard() {
+                    if (navigator.clipboard && navigator.clipboard.readText) {
+                        navigator.clipboard.readText()
+                            .then(text => resolve({ text, method: 'Web API' }))
+                            .catch(err => reject(err));
+                    } else {
+                        reject(new Error('Nessun metodo disponibile per leggere il testo'));
+                    }
+                }
+            });
+        }
+        
+        // Clipboard Write Test
         document.getElementById('testClipboardWrite').addEventListener('click', async () => {
-            if (!checkAvailability('navigator.clipboard.writeText', 'clipboardResult')) return;
+            const textToWrite = 'Test WebView ' + new Date().toLocaleTimeString();
             
             try {
-                await navigator.clipboard.writeText('Test WebView ' + new Date().toLocaleTimeString());
-                updateResult('clipboardResult', 'Testo copiato negli appunti!', 'success');
+                const method = await copyTextToClipboard(textToWrite);
+                updateResult('clipboardResult', `Testo copiato negli appunti! (via ${method})`, 'success');
             } catch (err) {
                 updateResult('clipboardResult', 'Errore scrittura clipboard: ' + err.message, 'error');
             }
         });
 
+        // Clipboard Read Test
         document.getElementById('testClipboardRead').addEventListener('click', async () => {
-            if (!checkAvailability('navigator.clipboard.readText', 'clipboardResult')) return;
-            
             try {
-                const text = await navigator.clipboard.readText();
-                updateResult('clipboardResult', 'Testo dagli appunti: ' + text, 'success');
+                const { text, method } = await readTextFromClipboard();
+                updateResult('clipboardResult', `Testo dagli appunti (via ${method}): ${text}`, 'success');
             } catch (err) {
                 updateResult('clipboardResult', 'Errore lettura clipboard: ' + err.message, 'error');
             }
