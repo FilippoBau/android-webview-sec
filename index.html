@@ -64,7 +64,6 @@
     <h1>Test API WebView Android</h1>
     <p>Questa pagina testa le API JavaScript disponibili in una WebView Android e i permessi associati.</p>
 
-
     <div class="test-section">
         <h2>1. Camera e Microfono</h2>
         <p>API: <code>navigator.mediaDevices.getUserMedia()</code></p>
@@ -163,78 +162,6 @@
                 updateResult(elementId, 'API non disponibile correttamente: ' + apiPath, 'not-available');
                 return false;
             }
-        }
-
-
-        // Test per richiedere storage persistente
-        document.getElementById('testPersist').addEventListener('click', async () => {
-            if (!checkAvailability('navigator.storage.persist', 'storageResult')) return;
-            
-            try {
-                updateResult('storageResult', 'Richiesta storage persistente in corso...', 'info');
-                const granted = await navigator.storage.persist();
-                if (granted) {
-                    updateResult('storageResult', 'Storage persistente concesso! I dati non saranno eliminati automaticamente.', 'success');
-                } else {
-                    updateResult('storageResult', 'Richiesta di storage persistente rifiutata. I dati potrebbero essere eliminati dal browser.', 'warning');
-                }
-            } catch (err) {
-                updateResult('storageResult', 'Errore richiesta storage persistente: ' + err.message, 'error');
-            }
-        });
-
-        // Test per scrivere dati
-        document.getElementById('testStorageWrite').addEventListener('click', async () => {
-            try {
-                const testData = { 
-                    id: 'test-data',
-                    timestamp: new Date().toISOString(),
-                    value: Math.random().toString(36).substring(2, 15)
-                };
-                
-                // Prova a salvare in localStorage
-                if (window.localStorage) {
-                    localStorage.setItem('webviewTest', JSON.stringify(testData));
-                    updateResult('storageResult', `Dati salvati in localStorage: ${JSON.stringify(testData)}`, 'success');
-                } else {
-                    throw new Error('localStorage non disponibile');
-                }
-            } catch (err) {
-                updateResult('storageResult', 'Errore scrittura dati: ' + err.message, 'error');
-            }
-        });
-
-        // Test per leggere dati
-        document.getElementById('testStorageRead').addEventListener('click', async () => {
-            try {
-                // Prova a leggere da localStorage
-                if (window.localStorage) {
-                    const storedData = localStorage.getItem('webviewTest');
-                    if (storedData) {
-                        const parsedData = JSON.parse(storedData);
-                        updateResult('storageResult', `Dati letti da localStorage: ${JSON.stringify(parsedData)}`, 'success');
-                    } else {
-                        updateResult('storageResult', 'Nessun dato trovato in localStorage', 'warning');
-                    }
-                } else {
-                    throw new Error('localStorage non disponibile');
-                }
-            } catch (err) {
-                updateResult('storageResult', 'Errore lettura dati: ' + err.message, 'error');
-            }
-        });
-
-        // Funzione per formattare bytes in formato leggibile
-        function formatBytes(bytes, decimals = 2) {
-            if (bytes === 0 || bytes === undefined) return '0 Bytes';
-            
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-            
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
 
         // 1. Camera e Microfono
