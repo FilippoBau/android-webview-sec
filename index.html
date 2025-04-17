@@ -250,6 +250,35 @@
                 updateResult('fileResult', 'Errore accesso file: ' + err.message, 'error');
             }
         });
+                // Function to copy text using either native or web API
+        function copyTextToClipboard(text) {
+            return new Promise((resolve, reject) => {
+                // Try using the Native Android bridge first if available
+                if (typeof NativeAndroid !== 'undefined' && NativeAndroid.copyToClipboard) {
+                    try {
+                        NativeAndroid.copyToClipboard(text);
+                        resolve('Native Android');
+                    } catch (err) {
+                        console.error('Native clipboard error:', err);
+                        // Fall back to web API
+                        tryWebClipboard();
+                    }
+                } else {
+                    // If native bridge isn't available, try web API
+                    tryWebClipboard();
+                }
+                
+                function tryWebClipboard() {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text)
+                            .then(() => resolve('Web API'))
+                            .catch(err => reject(err));
+                    } else {
+                        reject(new Error('Nessun metodo disponibile per copiare il testo'));
+                    }
+                }
+            });
+        }
         function readTextFromClipboard() {
             return new Promise((resolve, reject) => {
                 // Try using the Native Android bridge first if available
