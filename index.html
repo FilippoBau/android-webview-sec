@@ -221,232 +221,59 @@
                 updateResult('geoResult', 'Errore geolocalizzazione: ' + err.message, 'error');
             }
         });
-// 3. Accesso File
-document.getElementById('testFile').addEventListener('click', () => {
-    if (!checkAvailability('FileReader', 'fileResult')) return;
-    
-    // Test input file standard
-    const fileInput = document.getElementById('fileInput');
-    fileInput.click();
-    
-    // Tentativo di accesso al file specifico
-    testWindowFileSystemAccess();
-});
 
-document.getElementById('fileInput').addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (!file) {
-        updateResult('fileResult', 'Nessun file selezionato', 'error');
-        return;
-    }
-    
-    try {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            updateResult('fileResult', `File letto correttamente! Nome: ${file.name}, Dimensione: ${file.size} bytes`, 'success');
-            
-            // Controlla se è il file cercato
-            if (file.name === 'Beijing_Bass.mp3') {
-                updateResult('fileResult', document.getElementById('fileResult').innerHTML + 
-                    `<br><strong>File cercato trovato!</strong>`, 'success');
-            }
-        };
-        reader.onerror = (e) => {
-            updateResult('fileResult', 'Errore lettura file: ' + e.target.error, 'error');
-        };
-        reader.readAsDataURL(file);
-    } catch (err) {
-        updateResult('fileResult', 'Errore accesso file: ' + err.message, 'error');
-    }
-});
 
-// Tentativo di accesso al filesystem usando API di window
-function testWindowFileSystemAccess() {
-    // Creare un nuovo div per i risultati
-    const fsResult = document.createElement('div');
-    fsResult.className = 'result';
-    fsResult.id = 'fsResult';
-    document.getElementById('fileResult').parentNode.insertBefore(fsResult, 
-        document.getElementById('fileResult').nextSibling);
-    
-    updateResult('fsResult', '<strong>Tentativo di accesso al filesystem usando API di window:</strong>', 'info');
-    
-    const targetPath = '/storage/emulated/0/Music/Beijing_Bass.mp3';
-    
-    // Metodo 1: File System Access API (moderna, supportata nei browser più recenti)
-    try {
-        updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-            '<br><strong>1. Tentativo con File System Access API:</strong>', 'info');
-        
-        if ('showOpenFilePicker' in window) {
-            updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                '<br>File System Access API disponibile!', 'info');
-            
-            // Nota: questo aprirà comunque un selettore di file, quindi richiede interazione utente
-            // ma tentiamo di pre-selezionare il percorso o dare suggerimenti
-            
-            const pickerOpts = {
-                types: [
-                    {
-                        description: 'Audio Files',
-                        accept: {
-                            'audio/*': ['.mp3', '.wav', '.ogg']
-                        }
-                    }
-                ],
-                excludeAcceptAllOption: true,
-                // Tentativo di suggerire il percorso iniziale (supportato solo in alcuni browser)
-                startIn: 'music',
-                suggestedName: 'Beijing_Bass.mp3'
-            };
-            
-            updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                '<br>Per favore seleziona il file "Beijing_Bass.mp3" quando appare il selettore file.', 'info');
-            
-            // Questo aprirà comunque un selettore di file
-            window.showOpenFilePicker(pickerOpts)
-                .then(async ([fileHandle]) => {
-                    // Ottieni accesso al file
-                    const file = await fileHandle.getFile();
-                    
-                    // Leggi il file con FileReader
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                            '<br>File letto correttamente con File System Access API!', 'success');
-                        
-                        if (file.name === 'Beijing_Bass.mp3') {
-                            updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                                '<br>File target trovato!', 'success');
-                        }
-                    };
-                    reader.onerror = (e) => {
-                        updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                            '<br>Errore lettura file: ' + e.target.error, 'error');
-                    };
-                    reader.readAsDataURL(file);
-                })
-                .catch(err => {
-                    updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                        '<br>Errore con File System Access API: ' + err.message, 'error');
-                });
-        } else {
-            updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                '<br>File System Access API non supportata in questo browser.', 'error');
+
+                // 2. file system
+        document.getElementById('fileInput').addEventListener('click', () => {
+          async function apriELeggiFileComeDataURL() {
+  try {
+    // 1. Mostra il selettore file e ottieni il file handle
+    const [fileHandle] = await window.showOpenFilePicker({
+      types: [
+        {
+          description: 'Tutti i file',
+          accept: {
+            '*/*': ['.*']
+          }
         }
-    } catch (err) {
-        updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-            '<br>Errore File System Access API generale: ' + err.message, 'error');
-    }
-    
-    // Metodo 2: Origin Private File System API (più recente)
-    try {
-        updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-            '<br><br><strong>2. Tentativo con Origin Private File System API:</strong>', 'info');
-        
-        if ('navigator' in window && 'storage' in navigator && 'getDirectory' in navigator.storage) {
-            updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                '<br>Origin Private File System API disponibile!', 'info');
-            
-            navigator.storage.getDirectory().then(async (root) => {
-                try {
-                    // Nota: questa API può accedere solo ai file nell'area sandbox del browser,
-                    // non può accedere a un file specifico sul dispositivo come richiesto
-                    
-                    updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                        '<br>Accesso all\'area sandbox ottenuto, ma non può accedere a file esterni.', 'warning');
-                    
-                    // Tentiamo di creare un file di test per dimostrare l'uso
-                    const fileHandle = await root.getFileHandle('test.txt', { create: true });
-                    const writable = await fileHandle.createWritable();
-                    await writable.write('Test di scrittura tramite OPFS API');
-                    await writable.close();
-                    
-                    updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                        '<br>File test.txt creato nell\'area sandbox.', 'success');
-                    
-                    // Leggiamo il file appena creato
-                    const file = await fileHandle.getFile();
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                            '<br>File di test letto: ' + e.target.result, 'success');
-                    };
-                    reader.readAsText(file);
-                } catch (err) {
-                    updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                        '<br>Errore operazione file OPFS: ' + err.message, 'error');
-                }
-            }).catch(err => {
-                updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                    '<br>Errore accesso OPFS: ' + err.message, 'error');
-            });
-        } else {
-            updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                '<br>Origin Private File System API non supportata in questo browser.', 'error');
-        }
-    } catch (err) {
-        updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-            '<br>Errore OPFS generale: ' + err.message, 'error');
-    }
-    
-    // Metodo 3: DataTransfer API (tentativo creativo)
-    try {
-        updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-            '<br><br><strong>3. Tentativo con DataTransfer API:</strong>', 'info');
-        
-        // Tentiamo di creare un evento drop con un file specifico
-        // Nota: questo è un approccio creativo che molto probabilmente fallirà
-        
-        if ('DataTransfer' in window) {
-            const dt = new DataTransfer();
-            
-            try {
-                // Tentativo di aggiungere un file dal percorso (questo non funzionerà)
-                dt.items.add(targetPath);
-                
-                updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                    '<br>Tentativo di aggiungere percorso a DataTransfer. Questo probabilmente fallirà.', 'warning');
-                
-            } catch(err) {
-                updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                    '<br>Errore aggiunta percorso a DataTransfer: ' + err.message, 'error');
-                
-                // Proviamo alternativa con un file vuoto
-                try {
-                    const emptyFile = new File([], "emptyFile.txt", {
-                        type: "text/plain",
-                        lastModified: new Date().getTime()
-                    });
-                    
-                    dt.items.add(emptyFile);
-                    
-                    updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                        '<br>File vuoto creato e aggiunto a DataTransfer.', 'info');
-                    
-                    // Non possiamo simulare un vero evento di drop con un file specifico dal filesystem
-                    updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                        '<br>Non è possibile aggiungere un file specifico dal filesystem usando DataTransfer.', 'error');
-                } catch(err2) {
-                    updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                        '<br>Errore anche con file vuoto: ' + err2.message, 'error');
-                }
-            }
-        } else {
-            updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-                '<br>DataTransfer API non supportata in questo browser.', 'error');
-        }
-    } catch (err) {
-        updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-            '<br>Errore DataTransfer generale: ' + err.message, 'error');
-    }
-    
-    // Conclusione generale
-    updateResult('fsResult', document.getElementById('fsResult').innerHTML + 
-        '<br><br><strong>Conclusione:</strong> Per motivi di sicurezza, i browser moderni non consentono ' +
-        'l\'accesso diretto ai file del filesystem senza interazione dell\'utente. Le API più moderne ' +
-        'come File System Access API richiedono comunque che l\'utente selezioni esplicitamente il file.', 'info');
+      ],
+      excludeAcceptAllOption: false,
+      multiple: false
+    });
+
+    // 2. Usa getFile() per ottenere il File oggetto dal file handle
+    const file = await fileHandle.getFile();
+    console.log(`File selezionato: ${file.name}, ${file.size} bytes`);
+
+    // 3. Crea un FileReader per leggere il contenuto come DataURL
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const dataURL = e.target.result;
+      console.log("Contenuto DataURL:", dataURL);
+
+      // Mostra il risultato, ad esempio in una <img> se è un'immagine
+      const preview = document.getElementById('preview');
+      if (preview) {
+        preview.src = dataURL;
+      }
+          apriELeggiFileComeDataURL();
+    };
+
+    reader.onerror = (e) => {
+      console.error("Errore durante la lettura del file:", e.target.error);
+    };
+
+    // 4. Legge il file come DataURL
+    reader.readAsDataURL(file);
+
+  } catch (err) {
+    console.error("Errore generale:", err);
+  }
 }
+
+        });
 
         // 8. Network Information
         document.getElementById('testConnection').addEventListener('click', () => {
