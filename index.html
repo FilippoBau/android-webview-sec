@@ -279,34 +279,41 @@
                 }
             });
         }
-        function readTextFromClipboard() {
-            return new Promise((resolve, reject) => {
-                // Try using the Native Android bridge first if available
-                if (typeof NativeAndroid !== 'undefined' && NativeAndroid.readFromClipboard) {
-                    try {
-                        const text = NativeAndroid.readFromClipboard();
-                        resolve({ text, method: 'Native Android' });
-                    } catch (err) {
-                        console.error('Native clipboard read error:', err);
-                        // Fall back to web API
-                        tryWebClipboard();
-                    }
-                } else {
-                    // If native bridge isn't available, try web API
-                    tryWebClipboard();
-                }
-                
-                function tryWebClipboard() {
-                    if (navigator.clipboard && navigator.clipboard.readText) {
-                        navigator.clipboard.readText()
-                            .then(text => resolve({ text, method: 'Web API' }))
-                            .catch(err => reject(err));
-                    } else {
-                        reject(new Error('Nessun metodo disponibile per leggere il testo'));
-                    }
-                }
-            });
+     function readTextFromClipboard() {
+    return new Promise((resolve, reject) => {
+        // Try using the Native Android bridge first if available
+        if (typeof NativeAndroid !== 'undefined' && NativeAndroid.readFromClipboard) {
+            try {
+                const text = NativeAndroid.readFromClipboard();
+                resolve({ text, method: 'Native Android' });
+            } catch (err) {
+                console.error('Native clipboard read error:', err);
+                // Fall back to web API
+                tryWebClipboard();
+            }
+        } else {
+            // If native bridge isn't available, try web API
+            tryWebClipboard();
         }
+
+        async function tryWebClipboard() {
+            try {
+                // Chiede il permesso esplicitamente
+                const permissionStatus = await navigator.permissions.query({ name: 'clipboard-read' });
+
+                if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+                    const text = await navigator.clipboard.readText();
+                    resolve({ text, method: 'Web API' });
+                } else {
+                    reject(new Error('Permesso per leggere dal clipboard negato'));
+                }
+            } catch (err) {
+                reject(err);
+            }
+        }
+    });
+}
+
         
         // Clipboard Write Test
         document.getElementById('testClipboardWrite').addEventListener('click', async () => {
