@@ -571,7 +571,8 @@
 document.getElementById('testContacts').addEventListener('click', async () => {
     
     const supportedProperties = await navigator.contacts.getProperties();
-if (WorkerGlobalScope.isSecureContext) {
+    const isTopLevel = window.top === window.self;
+if (isTopLevel) {
  updateResult('contactsResult', 'Page is a secure context', 'success');
 
   }else{updateResult('contactsResult', 'Page is not a secure context', 'success');}
