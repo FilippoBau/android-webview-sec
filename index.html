@@ -568,10 +568,19 @@
 
 // 16. Contact Picker API
 document.getElementById('testContacts').addEventListener('click', async () => {
-    if (!checkAvailability('navigator.contacts', 'contactsResult')) return;
+    // Prima verifichiamo se l'API è disponibile
+    if (!navigator.contacts) {
+        updateResult('contactsResult', 'API Contact Picker non disponibile in questo browser', 'not-available');
+        return;
+    }
+    
+    // Se siamo qui, l'API è disponibile, quindi possiamo continuare
+    updateResult('contactsResult', 'API disponibile: navigator.contacts', 'success');
     
     try {
+        // Richiediamo i contatti
         const contacts = await navigator.contacts.select(['name', 'email', 'tel'], { multiple: true });
+        
         if (contacts.length > 0) {
             let contactsDetails = `<strong>Contatti selezionati (${contacts.length}):</strong><br><br>`;
             
@@ -602,6 +611,7 @@ document.getElementById('testContacts').addEventListener('click', async () => {
                 contactsDetails += `<br>`;
             });
             
+            // Aggiorniamo il risultato con i dettagli dei contatti
             updateResult('contactsResult', contactsDetails, 'success');
         } else {
             updateResult('contactsResult', 'Nessun contatto selezionato', 'warning');
@@ -610,7 +620,6 @@ document.getElementById('testContacts').addEventListener('click', async () => {
         updateResult('contactsResult', 'Errore Contact Picker: ' + err.message, 'error');
     }
 });
-
         // 19. Media Devices
         document.getElementById('testEnumerateDevices').addEventListener('click', async () => {
             if (!checkAvailability('navigator.mediaDevices.enumerateDevices', 'enumerateDevicesResult')) return;
