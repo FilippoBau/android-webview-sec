@@ -306,73 +306,80 @@
 
 
 
-         document.addEventListener('DOMContentLoaded', function() {
-            const statusEl = document.getElementById('status');
+document.addEventListener('DOMContentLoaded', function() {
             const readBtn = document.getElementById('readBtn');
             const clipboardContentEl = document.getElementById('clipboardContent');
+            const statusEl = document.getElementById('status');
+            const inputArea = document.getElementById('inputArea');
             
             // Verifica se l'API Clipboard è supportata
-            if (!navigator.clipboard) {
-                statusEl.innerHTML = '<span class="error">L\'API Clipboard non è supportata in questo browser.</span>';
-                readBtn.disabled = true;
-                return;
-            }
+            const isClipboardSupported = navigator.clipboard && typeof navigator.clipboard.readText === 'function';
             
-            // Controlla se l'autorizzazione è già stata concessa
-            checkPermission();
-            
-            // Aggiungi event listener al pulsante
-            readBtn.addEventListener('click', readFromClipboard);
-            
-            // Funzione per controllare le autorizzazioni
-            async function checkPermission() {
+            readBtn.addEventListener('click', async function() {
+                statusEl.textContent = '';
+                clipboardContentEl.textContent = 'Lettura in corso...';
+                
                 try {
-                    // Controlla se abbiamo già i permessi
-                    const permissionStatus = await navigator.permissions.query({ name: 'clipboard-read' });
-                    
-                    if (permissionStatus.state === 'granted') {
-                        statusEl.innerHTML = '<span class="success">Autorizzazione concessa. Premi il pulsante per leggere.</span>';
-                    } else if (permissionStatus.state === 'prompt') {
-                        statusEl.innerHTML = 'Ti verrà chiesta l\'autorizzazione quando premerai il pulsante.';
-                    } else if (permissionStatus.state === 'denied') {
-                        statusEl.innerHTML = '<span class="error">Autorizzazione negata. Modifica le impostazioni del browser per consentire l\'accesso alla clipboard.</span>';
-                        readBtn.disabled = true;
+                    // Metodo 1: API Clipboard standard (funziona su browser moderni se autorizzato)
+                    if (isClipboardSupported) {
+                        try {
+                            const text = await navigator.clipboard.readText();
+                            clipboardContentEl.textContent = text || 'La clipboard è vuota';
+                            return;
+                        } catch (err) {
+                            console.log('API Clipboard fallita, provo il metodo alternativo');
+                            // Continua con il metodo alternativo se fallisce
+                        }
                     }
                     
-                    // Ascolta i cambiamenti di stato dell'autorizzazione
-                    permissionStatus.addEventListener('change', function() {
-                        checkPermission();
+                    // Metodo 2: Approccio con document.execCommand (per browser più vecchi)
+                    // Avvisa l'utente di ciò che deve fare
+                    clipboardContentEl.textContent = 'Tocca qui e poi tocca "Incolla" nella barra degli strumenti che appare';
+                    statusEl.textContent = 'Pronto per l\'incollatura manuale';
+                    
+                    // Cerca di attivare il focus e la selezione dell'input nascosto
+                    inputArea.style.position = 'fixed';
+                    inputArea.style.top = '50%';
+                    inputArea.style.left = '50%';
+                    inputArea.style.width = '80%';
+                    inputArea.style.height = '100px';
+                    inputArea.style.transform = 'translate(-50%, -50%)';
+                    inputArea.style.zIndex = '9999';
+                    inputArea.focus();
+                    
+                    // Ripristina la posizione nascosta dopo un breve momento
+                    setTimeout(() => {
+                        inputArea.style.position = 'absolute';
+                        inputArea.style.top = '-9999px';
+                        inputArea.style.left = '-9999px';
+                        inputArea.style.width = '10px';
+                        inputArea.style.height = '10px';
+                        inputArea.style.transform = '';
+                        inputArea.style.zIndex = '';
+                    }, 5000);
+                    
+                    // Ascolta i cambiamenti dell'input
+                    inputArea.addEventListener('input', function onPaste() {
+                        clipboardContentEl.textContent = inputArea.value || 'La clipboard è vuota';
+                        statusEl.textContent = '';
+                        inputArea.removeEventListener('input', onPaste);
+                        
+                        // Nascondi di nuovo l'area di input
+                        inputArea.style.position = 'absolute';
+                        inputArea.style.top = '-9999px';
+                        inputArea.style.left = '-9999px';
+                        inputArea.style.width = '10px';
+                        inputArea.style.height = '10px';
+                        inputArea.style.transform = '';
+                        inputArea.style.zIndex = '';
                     });
+                    
                 } catch (error) {
-                    console.error('Errore nel controllo dell\'autorizzazione:', error);
-                    statusEl.innerHTML = 'Prova a premere il pulsante per richiedere l\'accesso alla clipboard.';
+                    console.error('Errore:', error);
+                    statusEl.textContent = `Errore: ${error.message}`;
+                    clipboardContentEl.textContent = 'Impossibile leggere dalla clipboard';
                 }
-            }
-            
-            // Funzione per leggere dalla clipboard
-            async function readFromClipboard() {
-                try {
-                    statusEl.innerHTML = 'Tentativo di lettura dalla clipboard...';
-                    
-                    // Leggi il testo dalla clipboard
-                    const text = await navigator.clipboard.readText();
-                    
-                    // Mostra il testo
-                    clipboardContentEl.textContent = text || 'La clipboard è vuota';
-                    statusEl.innerHTML = '<span class="success">Contenuto clipboard letto con successo!</span>';
-                } catch (error) {
-                    console.error('Errore nella lettura della clipboard:', error);
-                    
-                    if (error.name === 'NotAllowedError') {
-                        statusEl.innerHTML = '<span class="error">Accesso alla clipboard negato. Per favore concedi l\'autorizzazione nelle impostazioni del browser.</span>';
-                    } else {
-                        statusEl.innerHTML = `<span class="error">Errore: ${error.message}</span>`;
-                    }
-                }
-            }
-            
-            // Auto-leggi al caricamento della pagina (opzionale, ma richiederà immediatamente l'autorizzazione)
-            // setTimeout(readFromClipboard, 1000);
+            });
         });
 
 
