@@ -569,7 +569,13 @@
 
 
 document.getElementById('testContacts').addEventListener('click', async () => {
+    
     const supportedProperties = await navigator.contacts.getProperties();
+if (window.isSecureContext) {
+ updateResult('contactsResult', 'Page is a secure context', 'success');
+
+  }else{updateResult('contactsResult', 'Page is not a secure context', 'success');}
+
 
 
   try {
