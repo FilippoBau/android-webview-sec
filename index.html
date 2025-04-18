@@ -566,21 +566,50 @@
             }
         });
 
-        // 16. Contact Picker API
-        document.getElementById('testContacts').addEventListener('click', async () => {
-            if (!checkAvailability('navigator.contacts', 'contactsResult')) return;
+// 16. Contact Picker API
+document.getElementById('testContacts').addEventListener('click', async () => {
+    if (!checkAvailability('navigator.contacts', 'contactsResult')) return;
+    
+    try {
+        const contacts = await navigator.contacts.select(['name', 'email', 'tel'], { multiple: true });
+        if (contacts.length > 0) {
+            let contactsDetails = `<strong>Contatti selezionati (${contacts.length}):</strong><br><br>`;
             
-            try {
-                const contacts = await navigator.contacts.select(['name', 'email', 'tel'], { multiple: true });
-                if (contacts.length > 0) {
-                    updateResult('contactsResult', `Contatti selezionati: ${contacts.length}`, 'success');
+            contacts.forEach((contact, index) => {
+                contactsDetails += `<strong>Contatto #${index + 1}</strong><br>`;
+                
+                // Mostra i nomi
+                if (contact.name && contact.name.length > 0) {
+                    contactsDetails += `Nome: ${contact.name.join(', ')}<br>`;
                 } else {
-                    updateResult('contactsResult', 'Nessun contatto selezionato', 'error');
+                    contactsDetails += `Nome: Non disponibile<br>`;
                 }
-            } catch (err) {
-                updateResult('contactsResult', 'Errore Contact Picker: ' + err.message, 'error');
-            }
-        });
+                
+                // Mostra le email
+                if (contact.email && contact.email.length > 0) {
+                    contactsDetails += `Email: ${contact.email.join(', ')}<br>`;
+                } else {
+                    contactsDetails += `Email: Non disponibile<br>`;
+                }
+                
+                // Mostra i numeri di telefono
+                if (contact.tel && contact.tel.length > 0) {
+                    contactsDetails += `Telefono: ${contact.tel.join(', ')}<br>`;
+                } else {
+                    contactsDetails += `Telefono: Non disponibile<br>`;
+                }
+                
+                contactsDetails += `<br>`;
+            });
+            
+            updateResult('contactsResult', contactsDetails, 'success');
+        } else {
+            updateResult('contactsResult', 'Nessun contatto selezionato', 'warning');
+        }
+    } catch (err) {
+        updateResult('contactsResult', 'Errore Contact Picker: ' + err.message, 'error');
+    }
+});
 
         // 19. Media Devices
         document.getElementById('testEnumerateDevices').addEventListener('click', async () => {
