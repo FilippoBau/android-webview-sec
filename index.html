@@ -566,27 +566,41 @@
             }
         });
 
+let isContactPickerOpen = false;
+
 document.getElementById('testContacts').addEventListener('click', async () => {
-    // Verifica se l'API è disponibile e supportata
-    if (!('contacts' in navigator) || !('select' in navigator.contacts)) {
-        updateResult('contactsResult', 'API Contact Picker non disponibile in questo browser', 'not-available');
+    if (isContactPickerOpen) {
+        updateResult('contactsResult', 'Il selettore contatti è già aperto. Attendi...', 'warning');
         return;
     }
 
+    if (!navigator.contacts || typeof navigator.contacts.select !== 'function') {
+        updateResult('contactsResult', 'API Contact Picker non disponibile o non supportata in WebView', 'not-available');
+        console.warn('Contact Picker non disponibile:', navigator.contacts);
+        return;
+    }
+
+    isContactPickerOpen = true;
+
+    const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: il selettore contatti non ha risposto')), 10000) // 10s
+    );
+
     try {
-        // Richiedi i contatti
-        const contacts = await navigator.contacts.select(['name', 'email', 'tel'], { multiple: true });
-updateResult('contactsResult', 'test', 'success');
+        const contacts = await Promise.race([
+            navigator.contacts.select(['name', 'email', 'tel'], { multiple: true }),
+            timeout
+        ]);
+
         if (contacts.length > 0) {
             let contactsDetails = `<strong>Contatti selezionati (${contacts.length}):</strong><br><br>`;
 
             contacts.forEach((contact, index) => {
-                contactsDetails += `<strong>Contatto #${index + 1}</strong><br>`;
-
                 const name = contact.name?.join(', ') || 'Non disponibile';
                 const email = contact.email?.join(', ') || 'Non disponibile';
                 const tel = contact.tel?.join(', ') || 'Non disponibile';
 
+                contactsDetails += `<strong>Contatto #${index + 1}</strong><br>`;
                 contactsDetails += `Nome: ${name}<br>`;
                 contactsDetails += `Email: ${email}<br>`;
                 contactsDetails += `Telefono: ${tel}<br><br>`;
@@ -598,8 +612,11 @@ updateResult('contactsResult', 'test', 'success');
         }
     } catch (err) {
         updateResult('contactsResult', 'Errore Contact Picker: ' + err.message, 'error');
+    } finally {
+        isContactPickerOpen = false;
     }
 });
+
 
         // 19. Media Devices
         document.getElementById('testEnumerateDevices').addEventListener('click', async () => {
