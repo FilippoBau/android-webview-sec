@@ -576,7 +576,7 @@ document.getElementById('testContacts').addEventListener('click', async () => {
     try {
         // Richiedi i contatti
         const contacts = await navigator.contacts.select(['name', 'email', 'tel'], { multiple: true });
-
+updateResult('contactsResult', 'test', 'success');
         if (contacts.length > 0) {
             let contactsDetails = `<strong>Contatti selezionati (${contacts.length}):</strong><br><br>`;
 
