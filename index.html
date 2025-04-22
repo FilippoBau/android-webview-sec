@@ -571,17 +571,18 @@
 document.getElementById('testContacts').addEventListener('click', async () => {
     
     const supportedProperties = await navigator.contacts.getProperties();
-    const isTopLevel = window.top === window.self;
-if (isTopLevel) {
- updateResult('contactsResult', 'Page is a secure context', 'success');
 
-  }else{updateResult('contactsResult', 'Page is not a secure context', 'success');}
 
 
 
   try {
     const contacts = await navigator.contacts.select(supportedProperties);
-    updateResult('contactsResult', contacts[0].name, 'success');
+    updateResult(
+  'contactsResult',
+  Array.isArray(contacts[0].name) ? contacts[0].name[0] : String(contacts[0].name || 'No name'),
+  'success'
+);
+
   } catch (ex) {
     updateResult('contactsResult', ex.message, 'error');
   }
