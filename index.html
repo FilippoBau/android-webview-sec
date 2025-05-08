@@ -357,7 +357,7 @@
             checkPermission2();
             // Funzione per controllare le autorizzazioni
             async function checkPermission2() {
-                const statusEL = document.getElementById("clipboardResult2")
+                const statusEl = document.getElementById("clipboardResult2")
                 try {
                     // Controlla se abbiamo già i permessi
                     const permissionStatus = await navigator.permissions.query({ name: 'clipboard-write' });
