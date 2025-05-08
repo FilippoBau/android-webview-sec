@@ -69,6 +69,7 @@
         <p>API: <code>navigator.mediaDevices.getUserMedia()</code></p>
         <button id="testCamera">Test Camera</button>
         <button id="testMic">Test Microfono</button>
+        <button id="registra-mic">Test registra microfono</button>
         <div class="result" id="mediaResult"></div>
         <video id="videoPreview" width="320" height="240" autoplay muted style="display: none;"></video>
     </div>
@@ -213,6 +214,54 @@
             }
         });
 
+        document.getElementById('registra-mic').addEventListener('click', async () => {
+            if (!checkAvailability('navigator.mediaDevices.getUserMedia', 'mediaResult')) return;
+        
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                updateResult('mediaResult', 'Microfono accessibile! Registrazione in corso...', 'success');
+        
+                const mediaRecorder = new MediaRecorder(stream);
+                let audioChunks = [];
+        
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+        
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        
+                    // Opzione per scaricare direttamente (solo su Safari o browser compatibili)
+                    const url = URL.createObjectURL(audioBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'recording.webm';
+                    a.click();
+        
+                    // Opzione per inviare all'app iOS (WKWebView)
+                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.audioHandler) {
+                        const reader = new FileReader();
+                        reader.onloadend = function () {
+                            const base64data = reader.result.split(',')[1]; // solo parte base64
+                            window.webkit.messageHandlers.audioHandler.postMessage(base64data);
+                        };
+                        reader.readAsDataURL(audioBlob);
+                    }
+        
+                    stream.getTracks().forEach(track => track.stop());
+                };
+        
+                mediaRecorder.start();
+        
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                }, 5000); // registra 5 secondi
+        
+            } catch (err) {
+                updateResult('mediaResult', 'Errore accesso microfono: ' + err.message, 'error');
+            }
+        });
+        
         // 2. Geolocalizzazione
         document.getElementById('testGeo').addEventListener('click', () => {
             if (!checkAvailability('navigator.geolocation.getCurrentPosition', 'geoResult')) return;
