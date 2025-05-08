@@ -358,13 +358,12 @@
             checkPermission2();
             // Funzione per controllare le autorizzazioni
             async function checkPermission2() {
-                const statusEl = document.getElementById("clipboardResult2")
                 try {
                     // Controlla se abbiamo già i permessi
                     const permissionStatus = await navigator.permissions.query({ name: 'clipboard-write' });
                     
                     if (permissionStatus.state === 'granted') {
-                        statusEl.innerHTML = '<span class="success">Autorizzazione concessa. Premi il pulsante per leggere.</span>';
+                        statusEl.innerHTML = '<span class="success">Autorizzazione concessa. Premi il pulsante per scrivere.</span>';
                     } else if (permissionStatus.state === 'prompt') {
                         statusEl.innerHTML = 'Ti verrà chiesta l\'autorizzazione quando premerai il pulsante.';
                     } else if (permissionStatus.state === 'denied') {
@@ -380,6 +379,13 @@
                     console.error('Errore nel controllo dell\'autorizzazione:', error);
                     statusEl.innerHTML = 'Prova a premere il pulsante per richiedere l\'accesso alla clipboard.';
                 }
+            }
+            if (navigator.clipboard && navigator.clipboard.write) {
+                        navigator.clipboard.write("Testo copiato con API clipboard-write")
+                            .then(() => resolve('Web API'))
+                            .catch(err => reject(err));
+            } else {
+                    reject(new Error('Nessun metodo disponibile per copiare il testo'));
             }
         });
 
