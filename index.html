@@ -382,10 +382,8 @@
             }
             if (navigator.clipboard && navigator.clipboard.write) {
                         navigator.clipboard.write("Testo copiato con API clipboard-write")
-                            .then(() => resolve('Web API'))
-                            .catch(err => reject(err));
             } else {
-                    reject(new Error('Nessun metodo disponibile per copiare il testo'));
+                    console.error('Errore nella scrittura in clipboard');
             }
         });
 
