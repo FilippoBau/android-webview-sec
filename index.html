@@ -346,6 +346,7 @@
         // Clipboard Write Test 2
         document.getElementById('testClip2').addEventListener('click', async () => {
             const textToWrite = 'Test WebView ' + new Date().toLocaleTimeString();
+            const statusEl = document.getElementById("clipboardResult2")
             
             if (!navigator.clipboard) {
                             statusEl.innerHTML = '<span class="error">L\'API Clipboard non è supportata in questo browser.</span>';
