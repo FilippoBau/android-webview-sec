@@ -94,6 +94,8 @@
         <p>API: <code>navigator.clipboard.writeText()</code> e <code>navigator.clipboard.readText()</code></p>
         <button id="testClipboardWrite">Scrivi negli Appunti</button>
         <div class="result" id="clipboardResult"></div>
+        <button id="testClip2">Scrivi negli Appunti</button>
+        <div class="result" id="clipboardResult2"></div>
     </div>
     <div class="container">
         <h1>Lettore Clipboard</h1>
@@ -341,6 +343,43 @@
             }
         });
 
+        // Clipboard Write Test
+        document.getElementById('testClip2').addEventListener('click', async () => {
+            const textToWrite = 'Test WebView ' + new Date().toLocaleTimeString();
+            
+            if (!navigator.clipboard) {
+                            statusEl.innerHTML = '<span class="error">L\'API Clipboard non è supportata in questo browser.</span>';
+                            readBtn.disabled = true;
+                            return;
+                        }
+            
+            // Controlla se l'autorizzazione è già stata concessa
+            checkPermission2();
+            // Funzione per controllare le autorizzazioni
+            async function checkPermission2() {
+                try {
+                    // Controlla se abbiamo già i permessi
+                    const permissionStatus = await navigator.permissions.query({ name: 'clipboard-write' });
+                    
+                    if (permissionStatus.state === 'granted') {
+                        statusEl.innerHTML = '<span class="success">Autorizzazione concessa. Premi il pulsante per leggere.</span>';
+                    } else if (permissionStatus.state === 'prompt') {
+                        statusEl.innerHTML = 'Ti verrà chiesta l\'autorizzazione quando premerai il pulsante.';
+                    } else if (permissionStatus.state === 'denied') {
+                        statusEl.innerHTML = '<span class="error">Autorizzazione negata. Modifica le impostazioni del browser per consentire l\'accesso alla clipboard.</span>';
+                        readBtn.disabled = true;
+                    }
+                    
+                    // Ascolta i cambiamenti di stato dell'autorizzazione
+                    permissionStatus.addEventListener('change', function() {
+                        checkPermission2();
+                    });
+                } catch (error) {
+                    console.error('Errore nel controllo dell\'autorizzazione:', error);
+                    statusEl.innerHTML = 'Prova a premere il pulsante per richiedere l\'accesso alla clipboard.';
+                }
+            }
+        });
 
 
          document.addEventListener('DOMContentLoaded', function() {
