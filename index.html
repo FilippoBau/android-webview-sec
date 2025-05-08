@@ -237,18 +237,6 @@
                     a.href = url;
                     a.download = 'recording.webm';
                     a.click();
-        
-                    // Opzione per inviare all'app iOS (WKWebView)
-                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.audioHandler) {
-                        const reader = new FileReader();
-                        reader.onloadend = function () {
-                            const base64data = reader.result.split(',')[1]; // solo parte base64
-                            window.webkit.messageHandlers.audioHandler.postMessage(base64data);
-                        };
-                        reader.readAsDataURL(audioBlob);
-                    }
-        
-                    stream.getTracks().forEach(track => track.stop());
                 };
         
                 mediaRecorder.start();
