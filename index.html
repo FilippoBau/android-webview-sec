@@ -343,8 +343,9 @@
             }
         });
 
-        // Clipboard Write Test
+        // Clipboard Write Test 2
         document.getElementById('testClip2').addEventListener('click', async () => {
+            const statusEL = document.getElementById("clipboardResult2")
             const textToWrite = 'Test WebView ' + new Date().toLocaleTimeString();
             
             if (!navigator.clipboard) {
